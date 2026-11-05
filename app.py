@@ -493,6 +493,13 @@ async def open_browser_manual(req: AccountActionReq):
         "--enforce-webrtc-ip-permission-check",
         "--start-maximized",
     ]
+    if os.name != "nt":
+        chrome_args.extend(["--no-sandbox", "--disable-dev-shm-usage"])
+        if not os.environ.get("DISPLAY"):
+            append_log(
+                f"[{time.strftime('%H:%M:%S')}] [BROWSER] ⚠️ Máy chủ Linux đang chạy ở chế độ không giao diện (Headless/VPS, không có DISPLAY), vui lòng dùng nút 【▶ Thực thi】 để chạy tự động qua Xvfb."
+            )
+            return {"ok": False, "message": "Môi trường Linux Headless không có màn hình DISPLAY để mở cửa sổ thủ công"}
 
     if parsed_proxy:
         if parsed_proxy.get("username"):
@@ -527,4 +534,6 @@ async def open_browser_manual(req: AccountActionReq):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8765, log_level="warning")
+    host = os.environ.get("HOST", "0.0.0.0" if os.name != "nt" else "127.0.0.1")
+    port = int(os.environ.get("PORT", "8765"))
+    uvicorn.run(app, host=host, port=port, log_level="warning")

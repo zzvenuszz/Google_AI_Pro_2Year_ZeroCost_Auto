@@ -3,15 +3,28 @@
 ========================================================================
 
 【I. Yêu cầu môi trường chạy】
-1. Hệ điều hành Windows 10 / 11
-2. Đã cài đặt trình duyệt Google Chrome (đường dẫn mặc định là được)
-3. Đã cài đặt Python 3.10 trở lên (khi cài đặt nhớ tích chọn "Add Python to PATH")
+1. Hệ điều hành:
+   - Windows 10 / 11
+   - Hoặc Linux (Ubuntu / Debian / CentOS..., hỗ trợ cả Linux Desktop có giao diện lẫn Linux VPS/Server không màn hình qua Xvfb)
+2. Trình duyệt: Google Chrome hoặc Chromium (trên Linux nếu chưa cài sẽ tự động tải Chromium qua Playwright)
+3. Python 3.10 trở lên (trên Windows khi cài đặt nhớ tích chọn "Add Python to PATH")
 4. Môi trường mạng: Bật proxy khu vực Mỹ (US) trên máy, hoặc điền mẫu proxy ở cột bên trái của bảng điều khiển
 
 【II. Các bước khởi động nhanh】
+▶ Trên Windows:
 1. Lần đầu sử dụng, nhấp đúp chuột chạy file: 【1_Chay_Lan_Dau_Cai_Dat_Va_Khoi_Dong.bat】
 2. Những lần sử dụng sau, chỉ cần nhấp đúp chuột vào: 【2_Khoi_Dong_Bang_Dieu_Khien.bat】
 3. Trình duyệt sẽ tự động mở trang bảng điều khiển tại địa chỉ: http://127.0.0.1:8765
+
+▶ Trên Linux (Desktop hoặc VPS):
+1. Cài đặt gói hỗ trợ màn hình ảo Xvfb (khuyên dùng nếu chạy trên VPS/Server không có màn hình):
+   sudo apt update && sudo apt install -y xvfb python3-venv psmisc
+2. Lần đầu sử dụng, cấp quyền thực thi và chạy script cài đặt:
+   chmod +x 1_chay_lan_dau_linux.sh 2_khoi_dong_linux.sh
+   ./1_chay_lan_dau_linux.sh
+3. Những lần sử dụng sau, chỉ cần chạy:
+   ./2_khoi_dong_linux.sh
+4. Mở trình duyệt truy cập: http://127.0.0.1:8765 (hoặc http://<IP-Server>:8765)
 
 【III. Hướng dẫn điền thẻ thanh toán & Chạy tài khoản】
 1. Điền thẻ thanh toán (Bắt buộc):

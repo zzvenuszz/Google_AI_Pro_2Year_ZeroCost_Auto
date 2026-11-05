@@ -1,10 +1,13 @@
 import asyncio
 import base64
+import glob
 import hashlib
 import hmac
 import json
 import os
 import re
+import shutil
+import signal
 import socket
 import struct
 import subprocess
@@ -13,16 +16,54 @@ import time
 from typing import Callable, Dict, Any, Optional
 from playwright.async_api import async_playwright
 
+
 def _find_chrome_path() -> str:
-    candidates = [
-        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-        os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+    env_bin = os.environ.get("CHROME_BIN", "").strip()
+    if env_bin and os.path.exists(env_bin):
+        return env_bin
+
+    if os.name == "nt":
+        candidates = [
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+        ]
+        for p in candidates:
+            if os.path.exists(p):
+                return p
+        return candidates[0]
+
+    # Linux / macOS candidates
+    for cmd in (
+        "google-chrome",
+        "google-chrome-stable",
+        "chromium",
+        "chromium-browser",
+    ):
+        found = shutil.which(cmd)
+        if found:
+            return found
+
+    linux_paths = [
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "/opt/google/chrome/chrome",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/snap/bin/chromium",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     ]
-    for p in candidates:
+    for p in linux_paths:
         if os.path.exists(p):
             return p
-    return candidates[0]
+
+    # Fallback: Playwright bundled Chromium in ~/.cache/ms-playwright
+    pw_glob = os.path.expanduser("~/.cache/ms-playwright/chromium-*/chrome-linux*/chrome")
+    pw_matches = sorted(glob.glob(pw_glob), reverse=True)
+    if pw_matches:
+        return pw_matches[0]
+
+    return "google-chrome"
 
 
 CHROME_PATH = _find_chrome_path()
@@ -1722,6 +1763,9 @@ class GoogleUltraAutomator:
             "--start-maximized",
         ]
 
+        if os.name != "nt":
+            chrome_args.extend(["--no-sandbox", "--disable-dev-shm-usage", "--window-size=1400,950"])
+
         if parsed_proxy:
             if parsed_proxy.get("username"):
                 bridge_port = self.port + 200
@@ -1738,21 +1782,54 @@ class GoogleUltraAutomator:
         else:
             self.log(f"Đang khởi động môi trường Chrome độc lập (Cổng: {self.port}, không cấu hình proxy riêng, sử dụng mạng hiện tại của hệ thống)...")
 
+        if os.name != "nt" and not os.environ.get("DISPLAY"):
+            xvfb_bin = shutil.which("xvfb-run")
+            if xvfb_bin:
+                self.log("🖥️ Phát hiện môi trường Linux không có màn hình (Headless/VPS), tự động bọc trình duyệt qua màn hình ảo Xvfb...")
+                chrome_args = [xvfb_bin, "-a", "--server-args=-screen 0 1400x950x24"] + chrome_args
+            else:
+                self.log("🖥️ Phát hiện môi trường Linux không có DISPLAY và chưa cài xvfb, chuyển sang chế độ --headless=new...")
+                chrome_args.append("--headless=new")
+
         chrome_args.append("about:blank")
 
         # Cleanly kill any lingering process listening on self.port
-        try:
-            net_out = subprocess.check_output(f"netstat -ano | findstr :{self.port}", shell=True).decode("gbk", errors="ignore")
-            for line in net_out.splitlines():
-                if "LISTENING" in line:
-                    old_pid = line.strip().split()[-1]
-                    subprocess.run(f"taskkill /F /T /PID {old_pid}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception:
-            pass
+        if os.name == "nt":
+            try:
+                net_out = subprocess.check_output(f"netstat -ano | findstr :{self.port}", shell=True).decode("gbk", errors="ignore")
+                for line in net_out.splitlines():
+                    if "LISTENING" in line:
+                        old_pid = line.strip().split()[-1]
+                        subprocess.run(f"taskkill /F /T /PID {old_pid}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
+        else:
+            try:
+                subprocess.run(
+                    ["pkill", "-9", "-f", f"remote-debugging-port={self.port}"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                subprocess.run(
+                    ["fuser", "-k", f"{self.port}/tcp"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            except Exception:
+                pass
         await asyncio.sleep(0.8)
 
-        self.proc = subprocess.Popen(chrome_args)
-        await asyncio.sleep(2.8)
+        self.proc = subprocess.Popen(
+            chrome_args,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=(os.name != "nt"),
+        )
+        for _ in range(16):
+            await asyncio.sleep(0.5)
+            if is_port_open(self.port):
+                break
+        await asyncio.sleep(1.0)
 
         try:
             async with async_playwright() as p:
@@ -1788,7 +1865,16 @@ class GoogleUltraAutomator:
             if self.proxy_bridge:
                 await self.proxy_bridge.stop()
             if self.proc:
-                try:
-                    subprocess.run(f"taskkill /F /T /PID {self.proc.pid}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                except Exception:
-                    pass
+                if os.name == "nt":
+                    try:
+                        subprocess.run(f"taskkill /F /T /PID {self.proc.pid}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    except Exception:
+                        pass
+                else:
+                    try:
+                        os.killpg(os.getpgid(self.proc.pid), signal.SIGKILL)
+                    except Exception:
+                        try:
+                            self.proc.kill()
+                        except Exception:
+                            pass
