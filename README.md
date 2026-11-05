@@ -1,46 +1,46 @@
 ========================================================================
-  Google AI Pro (5 TB) 零成本两年 (US$0.00 -> 24个月) 全自动控制台
+  Bảng Điều Khiển Tự Động Google AI Pro (5 TB) 2 Năm Miễn Phí (US$0.00 -> 24 Tháng)
 ========================================================================
 
-【一、运行环境要求】
-1. Windows 10 / 11 系统
-2. 已安装 Google Chrome 浏览器（默认路径即可）
-3. 已安装 Python 3.10 或更高版本（安装时勾选 Add Python to PATH）
-4. 网络环境：本机开启美区（US）代理，或在控制台左侧填写代理模板
+【I. Yêu cầu môi trường chạy】
+1. Hệ điều hành Windows 10 / 11
+2. Đã cài đặt trình duyệt Google Chrome (đường dẫn mặc định là được)
+3. Đã cài đặt Python 3.10 trở lên (khi cài đặt nhớ tích chọn "Add Python to PATH")
+4. Môi trường mạng: Bật proxy khu vực Mỹ (US) trên máy, hoặc điền mẫu proxy ở cột bên trái của bảng điều khiển
 
-【二、快速启动步骤】
-1. 首次使用请双击运行：【1_首次运行_安装依赖并启动.bat】
-2. 之后日常使用直接双击：【2_启动控制台.bat】
-3. 浏览器会自动打开控制台页面：http://127.0.0.1:8765
+【II. Các bước khởi động nhanh】
+1. Lần đầu sử dụng, nhấp đúp chuột chạy file: 【1_Chay_Lan_Dau_Cai_Dat_Va_Khoi_Dong.bat】
+2. Những lần sử dụng sau, chỉ cần nhấp đúp chuột vào: 【2_Khoi_Dong_Bang_Dieu_Khien.bat】
+3. Trình duyệt sẽ tự động mở trang bảng điều khiển tại địa chỉ: http://127.0.0.1:8765
 
-【三、自定义填写支付卡 & 跑号说明】
-1. 填写支付卡（必填）：
-   - 在网页左侧【全局配置与内联免税绑卡】区域，填入你自己的 Visa 或 Mastercard 外币卡：
-     * 卡号（16位数字）
-     * 有效期（月 / 年，如 08 / 29）
-     * 安全码（3位 CVC）
-     * 持卡人英文姓名
-     * 免税邮编默认已填好 97201（美国俄勒冈免税州），无需修改
-   - 填写后点击【💾 保存配置】。
-   - 注：脚本内置严格 0 元消费保护，仅在结账弹窗确认为 US$0.00 时才会点击订阅，全程 0 扣费。
+【III. Hướng dẫn điền thẻ thanh toán & Chạy tài khoản】
+1. Điền thẻ thanh toán (Bắt buộc):
+   - Tại khu vực 【Cấu hình chung & Liên kết thẻ miễn thuế】 ở bên trái trang web, hãy điền thẻ thanh toán quốc tế Visa hoặc Mastercard của bạn:
+     * Số thẻ (16 chữ số)
+     * Hạn dùng (Tháng / Năm, ví dụ: 08 / 29)
+     * Mã bảo mật (3 số CVC)
+     * Tên chủ thẻ không dấu (tiếng Anh, ví dụ: NGUYEN VAN A)
+     * Mã ZIP miễn thuế mặc định đã được điền sẵn là 97201 (Bang Oregon - Mỹ, miễn thuế), không cần sửa đổi
+   - Sau khi điền xong, nhấn vào nút 【💾 Lưu cấu hình】.
+   - Lưu ý: Script được tích hợp cơ chế bảo vệ chi tiêu 0 đồng nghiêm ngặt, chỉ nhấn đăng ký khi cửa sổ thanh toán xác nhận mức giá là US$0.00, đảm bảo không bị trừ tiền trong suốt quá trình.
 
-2. 批量导入 Google 账号：
-   - 在网页右侧【批量放号导入区】粘贴账号（每行一个），支持以下任意格式：
-     * 邮箱----密码----辅助邮箱
-     * 邮箱----密码----辅助邮箱----2FA密钥
-     * 邮箱----密码----2FA密钥
-   - 点击【➕ 一键导入账号列表】。
+2. Nhập hàng loạt tài khoản Google:
+   - Tại khu vực 【Khu vực nhập tài khoản hàng loạt】 ở bên phải trang web, dán danh sách tài khoản vào (mỗi dòng một tài khoản), hỗ trợ bất kỳ định dạng nào sau đây:
+     * Email----Mật khẩu----Email khôi phục
+     * Email----Mật khẩu----Email khôi phục----Mã khóa 2FA
+     * Email----Mật khẩu----Mã khóa 2FA
+   - Nhấn vào nút 【➕ Nhập danh sách tài khoản】.
 
-3. 开始全自动执行：
-   - 点击单个账号右侧的【▶ 执行】或顶部的【▶ 批量全自动执行】。
-   - 脚本会自动完成：
-     Step 1: 自动登录 Google 并通过辅助邮箱 / 2FA 验证
-     Step 2: 内联免税绑卡 + 首层 12 个月免费包 (US$0.00)
-     Step 3: 叠加二层 6 个月免费包 (US$0.00 -> 18个月)
-     Step 4: 叠加三层 6 个月免费包 (US$0.00 -> 24个月封顶)
-     Step 5: 自动前往 Google Play 取消自动续订，锁死 2 年到期权益并截图验真
+3. Bắt đầu thực thi tự động hoàn toàn:
+   - Nhấn vào nút 【▶ Thực thi】 ở bên phải từng tài khoản, hoặc nút 【▶ Tự động chạy hàng loạt tài khoản chờ】 ở phía trên cùng.
+   - Script sẽ tự động hoàn thành các bước:
+     Step 1: Tự động đăng nhập Google và vượt qua bước xác minh Email khôi phục / 2FA
+     Step 2: Liên kết thẻ miễn thuế trực tiếp + Nhận gói miễn phí tầng 1 (12 tháng - US$0.00)
+     Step 3: Cộng dồn gói miễn phí tầng 2 thêm 6 tháng (US$0.00 -> 18 tháng)
+     Step 4: Cộng dồn gói miễn phí tầng 3 thêm 6 tháng (US$0.00 -> Tối đa 24 tháng)
+     Step 5: Tự động truy cập Google Play để hủy gia hạn tự động, khóa quyền lợi 2 năm và chụp ảnh màn hình xác nhận
 
 
-# 卡网：https://faka.cdkey.si
-# 博客：https://blog.caowo.de
-# TG群：@Hello_Florence
+# Trang mua hàng (Shop): https://faka.cdkey.si
+# Blog: https://blog.caowo.de
+# Nhóm Telegram: @Hello_Florence
