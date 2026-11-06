@@ -1863,6 +1863,7 @@ class GoogleUltraAutomator:
             xvfb_bin = shutil.which("xvfb-run")
             if xvfb_bin:
                 self.log("🖥️ Phát hiện môi trường Linux không có màn hình (Headless/VPS), tự động bọc trình duyệt qua màn hình ảo Xvfb...")
+                chrome_args.append("--headless=new")
                 chrome_args = [xvfb_bin, "-a", "--server-args=-screen 0 1400x950x24"] + chrome_args
             else:
                 self.log("🖥️ Phát hiện môi trường Linux không có DISPLAY và chưa cài xvfb, chuyển sang chế độ --headless=new...")
@@ -1902,7 +1903,7 @@ class GoogleUltraAutomator:
             stderr=subprocess.DEVNULL,
             start_new_session=(os.name != "nt"),
         )
-        for _ in range(16):
+        for _ in range(30):
             await asyncio.sleep(0.5)
             if is_port_open(self.port):
                 break
