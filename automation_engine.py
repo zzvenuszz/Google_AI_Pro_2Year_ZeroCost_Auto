@@ -1046,31 +1046,60 @@ class GoogleUltraAutomator:
                                                     cvc_v = (self.card.get("cvc") or "").strip()
                                                     holder_v = (self.card.get("holder") or "CARD HOLDER").strip()
                                                     zip_v = (self.card.get("postal_code") or "97201").strip()
-                                                    await vis.nth(0).click(force=True)
-                                                    await asyncio.sleep(0.2)
-                                                    await vis.nth(0).press_sequentially(cnum, delay=35)
-                                                    await asyncio.sleep(0.3)
-                                                    await vis.nth(1).click(force=True)
-                                                    await asyncio.sleep(0.2)
-                                                    await vis.nth(1).press_sequentially(f"{expm}{expy}", delay=35)
-                                                    await asyncio.sleep(0.3)
-                                                    await vis.nth(2).click(force=True)
-                                                    await asyncio.sleep(0.2)
-                                                    await vis.nth(2).press_sequentially(cvc_v, delay=35)
-                                                    await asyncio.sleep(0.3)
-                                                    try:
-                                                        cur_name = (await vis.nth(3).input_value(timeout=1000)).strip()
-                                                        if not cur_name:
-                                                            await vis.nth(3).fill(holder_v)
+                                                    # Identify each input field by attributes (mobile-friendly:
+                                                    # month/year split, field order not fixed)
+                                                    field_info = await tf.evaluate("""() => {
+                                                        const out = {};
+                                                        document.querySelectorAll('input:visible').forEach((el, i) => {
+                                                            const a = {};
+                                                            for (const attr of ['placeholder','aria-label','name','id','autocomplete','type','inputmode']) {
+                                                                const v = el.getAttribute(attr);
+                                                                if (v) a[attr] = v;
+                                                            }
+                                                            out[i] = a;
+                                                        });
+                                                        return out;
+                                                    }""")
+                                                    def pick_field(keywords):
+                                                        for idx, attrs in field_info.items():
+                                                            hay = " ".join(str(v) for v in attrs.values()).lower()
+                                                            if any(k in hay for k in keywords):
+                                                                return int(idx)
+                                                        return None
+                                                    idx_num = pick_field(['card','number','credit','debit'])
+                                                    idx_exp_m = pick_field(['month','mm'])
+                                                    idx_exp_y = pick_field(['year','yyyy'])
+                                                    idx_cvc = pick_field(['cvc','cvv','security'])
+                                                    idx_holder = pick_field(['holder','name'])
+                                                    idx_zip = pick_field(['zip','postal','postcode'])
+                                                    idx_exp_combo = None
+                                                    if idx_exp_m is None and idx_exp_y is None:
+                                                        idx_exp_combo = pick_field(['expire','expiry','exp'])
+                                                    async def fill_idx(idx, value, sequential=True):
+                                                        if idx is None:
+                                                            return
+                                                        try:
+                                                            el = vis.nth(int(idx))
+                                                            await el.click(force=True)
                                                             await asyncio.sleep(0.2)
-                                                    except Exception:
-                                                        pass
-                                                    if cnt >= 5:
-                                                        await vis.nth(4).click(force=True)
-                                                        await asyncio.sleep(0.2)
-                                                        await vis.nth(4).fill("")
-                                                        await vis.nth(4).press_sequentially(zip_v, delay=35)
-                                                        await asyncio.sleep(0.3)
+                                                            if sequential:
+                                                                await el.press_sequentially(str(value), delay=35)
+                                                            else:
+                                                                await el.fill(str(value))
+                                                            await asyncio.sleep(0.3)
+                                                        except Exception:
+                                                            pass
+                                                    await fill_idx(idx_num, cnum, sequential=True)
+                                                    if idx_exp_m is not None:
+                                                        await fill_idx(idx_exp_m, expm, sequential=True)
+                                                    if idx_exp_y is not None:
+                                                        await fill_idx(idx_exp_y, expy, sequential=True)
+                                                    if idx_exp_combo is not None:
+                                                        await fill_idx(idx_exp_combo, f"{expm}{expy}", sequential=True)
+                                                    await fill_idx(idx_cvc, cvc_v, sequential=True)
+                                                    if idx_holder is not None:
+                                                        await fill_idx(idx_holder, holder_v, sequential=False)
+                                                    await fill_idx(idx_zip, zip_v, sequential=False)
                                                     sbtn = tf.locator('button:has-text("保存卡"), button:has-text("保存"), button:has-text("Save card"), button:has-text("Save"), [role="button"]:has-text("保存")').first
                                                     if await sbtn.count() > 0:
                                                         await sbtn.click(force=True)
