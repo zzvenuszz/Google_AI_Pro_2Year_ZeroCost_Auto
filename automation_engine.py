@@ -738,9 +738,11 @@ class GoogleUltraAutomator:
             elif ("challenge/dp" in page_obj.url or "challenge/az" in page_obj.url or "challenge/pk" in page_obj.url or "扫描二维码" in body) and "challenge/totp" not in page_obj.url:
                 totp_vis = page_obj.locator('input[type="tel"], input#totpPin, input[name="totpPin"]')
                 if await totp_vis.count() == 0 or not await totp_vis.first.is_visible():
+                    self.log("Phát hiện trang xác minh bằng điện thoại (Mã QR/Thông báo đẩy/Passkey), chờ 30 giây để người dùng xác nhận trên thiết bị trước khi chuyển cách xác minh khác...")
+                    await asyncio.sleep(30)
                     try_other = page_obj.locator("text=/试试其他方式|尝试其他方式|Try another way/i").first
                     if await try_other.count() > 0 and await try_other.is_visible():
-                        self.log("Phát hiện trang phương thức xác minh khác (Mã QR/Thông báo đẩy/Passkey), đang nhấn 【Thử cách khác】 để chuyển sang mã 2FA...")
+                        self.log("Đã chờ 30 giây chưa có phản hồi từ thiết bị, đang nhấn 【Thử cách khác】 để chuyển sang mã 2FA...")
                         try:
                             await try_other.click(timeout=4000)
                         except Exception:
