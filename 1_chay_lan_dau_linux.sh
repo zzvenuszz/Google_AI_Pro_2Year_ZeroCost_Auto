@@ -16,8 +16,9 @@ if [ ! -d ".venv" ]; then
     }
 fi
 
-if [ ! -f ".venv/bin/python" ]; then
-    echo "❌ .venv bị hỏng (thiếu .venv/bin/python). Hãy xóa .venv và chạy lại script."
+if [ ! -f ".venv/bin/python" ] || [ ! -f ".venv/bin/pip" ]; then
+    echo "❌ .venv bị hỏng hoặc chưa cài xong (thiếu .venv/bin/python hoặc .venv/bin/pip)."
+    echo "   Hãy xóa thư mục .venv cũ rồi chạy lại script này."
     exit 1
 fi
 
