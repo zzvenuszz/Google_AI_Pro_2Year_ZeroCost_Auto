@@ -953,6 +953,20 @@ class GoogleUltraAutomator:
                     await ok_btn.click(force=True)
                     await asyncio.sleep(2.0)
 
+    def _is_payment_frame(self, fr_url: str) -> bool:
+        """Trả về True nếu frame là cửa sổ thanh toán / xác nhận Google Play."""
+        if not fr_url:
+            return False
+        low = fr_url.lower()
+        return (
+            "eacquire" in low
+            or "pay.google.com" in low
+            or "payments.google.com" in low
+            or "instrumentmanager" in low
+            or "payments" in low
+            or "wallet.google.com" in low
+        )
+
     async def _poll_eacquire_modal(self, page, max_loops: int = 55, step_tag: str = ""):
         last_confirm_click_ts = 0.0
         loops_left = max_loops
@@ -973,7 +987,7 @@ class GoogleUltraAutomator:
 
             for fr in frames_to_check:
                 fr_url = fr.url or ""
-                if "eacquire" in fr_url:
+                if self._is_payment_frame(fr_url):
                     try:
                         state_info = await fr.evaluate(
                             """() => {
@@ -1092,7 +1106,7 @@ class GoogleUltraAutomator:
                         pass
 
             # Also check for open intermediate confirm dialog ("运作方式 -> 继续订阅" / "是的，继续") during the entire wait
-            has_eacquire_frame = any("eacquire" in (f.url or "") for f in frames_to_check)
+            has_eacquire_frame = any(self._is_payment_frame(f.url or "") for f in frames_to_check)
             if not has_eacquire_frame and (time.time() - last_confirm_click_ts) >= 2.5:
                 try:
                     confirm_btn = await page.evaluate(
