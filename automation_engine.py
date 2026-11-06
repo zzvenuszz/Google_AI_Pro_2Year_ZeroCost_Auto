@@ -1037,7 +1037,7 @@ class GoogleUltraAutomator:
                                         all_frames = list(page.frames)
                                         for tf in all_frames:
                                             try:
-                                                vis = tf.locator("input:visible")
+                                                vis = tf.locator("input:visible, select:visible")
                                                 cnt = await vis.count()
                                                 if cnt >= 4:
                                                     cnum = (self.card.get("number") or "").replace(" ", "")
@@ -1046,15 +1046,19 @@ class GoogleUltraAutomator:
                                                     cvc_v = (self.card.get("cvc") or "").strip()
                                                     holder_v = (self.card.get("holder") or "CARD HOLDER").strip()
                                                     zip_v = (self.card.get("postal_code") or "97201").strip()
-                                                    # Identify each input field by attributes (mobile-friendly:
-                                                    # month/year split, field order not fixed)
+                                                    # Nhận diện tông ô nhập liệu bằng thuộc tính (hỗ trợ di động:
+                                                    # tháng/năm tách biêt, select box, thứ tự trường không cố định)
                                                     field_info = await tf.evaluate("""() => {
                                                         const out = {};
-                                                        document.querySelectorAll('input:visible').forEach((el, i) => {
+                                                        document.querySelectorAll('input:visible, select:visible').forEach((el, i) => {
                                                             const a = {};
                                                             for (const attr of ['placeholder','aria-label','name','id','autocomplete','type','inputmode']) {
                                                                 const v = el.getAttribute(attr);
                                                                 if (v) a[attr] = v;
+                                                            }
+                                                            a.tag = el.tagName.toLowerCase();
+                                                            if (el.tagName.toLowerCase() === 'select') {
+                                                                a.options = Array.from(el.options).map(o => o.text.trim() + '|' + o.value);
                                                             }
                                                             out[i] = a;
                                                         });
@@ -1066,16 +1070,17 @@ class GoogleUltraAutomator:
                                                             if any(k in hay for k in keywords):
                                                                 return int(idx)
                                                         return None
-                                                    idx_num = pick_field(['card','number','credit','debit'])
-                                                    idx_exp_m = pick_field(['month','mm'])
-                                                    idx_exp_y = pick_field(['year','yyyy'])
-                                                    idx_cvc = pick_field(['cvc','cvv','security'])
-                                                    idx_holder = pick_field(['holder','name'])
-                                                    idx_zip = pick_field(['zip','postal','postcode'])
+                                                    idx_num = pick_field(['card','number','credit','debit','số thệ'])
+                                                    idx_exp_m = pick_field(['month','tháng','mm'])
+                                                    idx_exp_y = pick_field(['year','năm','yyyy'])
+                                                    idx_cvc = pick_field(['cvc','cvv','security','mã bảo mầt','mã xác thực'])
+                                                    idx_holder = pick_field(['holder','name','tên','chủ thệ'])
+                                                    idx_zip = pick_field(['zip','postal','mã bưu chính','mã zip','postcode'])
                                                     idx_exp_combo = None
                                                     if idx_exp_m is None and idx_exp_y is None:
-                                                        idx_exp_combo = pick_field(['expire','expiry','exp'])
-                                                    async def fill_idx(idx, value, sequential=True):
+                                                        idx_exp_combo = pick_field(['expire','expiry','exp','hềt hạn','ngày hềt hạn','mm/yy','mm/yyyy'])
+                                                    
+                                                    async def fill_input(idx, value, sequential=True):
                                                         if idx is None:
                                                             return
                                                         try:
@@ -1089,17 +1094,44 @@ class GoogleUltraAutomator:
                                                             await asyncio.sleep(0.3)
                                                         except Exception:
                                                             pass
-                                                    await fill_idx(idx_num, cnum, sequential=True)
-                                                    if idx_exp_m is not None:
-                                                        await fill_idx(idx_exp_m, expm, sequential=True)
-                                                    if idx_exp_y is not None:
-                                                        await fill_idx(idx_exp_y, expy, sequential=True)
+                                                    
+                                                    async def fill_select(idx, value):
+                                                        if idx is None:
+                                                            return
+                                                        try:
+                                                            el = vis.nth(int(idx))
+                                                            await el.click(force=True)
+                                                            await asyncio.sleep(0.3)
+                                                            # Thử chọn option khóp value (2 chữ số năm/tháng)
+                                                            await el.select_option(value)
+                                                            await asyncio.sleep(0.3)
+                                                        except Exception:
+                                                            try:
+                                                                # Fallback: click option bằng text
+                                                                await el.select_option(label=value)
+                                                                await asyncio.sleep(0.3)
+                                                            except Exception:
+                                                                pass
+                                                    
+                                                    await fill_input(idx_num, cnum, sequential=True)
+                                                    if idx_exp_m is not None and field_info.get(idx_exp_m, {}).get('tag') == 'select':
+                                                        await fill_select(idx_exp_m, expm)
+                                                    elif idx_exp_m is not None:
+                                                        await fill_input(idx_exp_m, expm, sequential=True)
+                                                    if idx_exp_y is not None and field_info.get(idx_exp_y, {}).get('tag') == 'select':
+                                                        await fill_select(idx_exp_y, expy)
+                                                    elif idx_exp_y is not None:
+                                                        await fill_input(idx_exp_y, expy, sequential=True)
                                                     if idx_exp_combo is not None:
-                                                        await fill_idx(idx_exp_combo, f"{expm}{expy}", sequential=True)
-                                                    await fill_idx(idx_cvc, cvc_v, sequential=True)
+                                                        tag = field_info.get(idx_exp_combo, {}).get('tag')
+                                                        if tag == 'select':
+                                                            await fill_select(idx_exp_combo, f"{expm}/{expy}")
+                                                        else:
+                                                            await fill_input(idx_exp_combo, f"{expm}{expy}", sequential=True)
+                                                    await fill_input(idx_cvc, cvc_v, sequential=True)
                                                     if idx_holder is not None:
-                                                        await fill_idx(idx_holder, holder_v, sequential=False)
-                                                    await fill_idx(idx_zip, zip_v, sequential=False)
+                                                        await fill_input(idx_holder, holder_v, sequential=False)
+                                                    await fill_input(idx_zip, zip_v, sequential=False)
                                                     sbtn = tf.locator('button:has-text("保存卡"), button:has-text("保存"), button:has-text("Save card"), button:has-text("Save"), [role="button"]:has-text("保存")').first
                                                     if await sbtn.count() > 0:
                                                         await sbtn.click(force=True)
