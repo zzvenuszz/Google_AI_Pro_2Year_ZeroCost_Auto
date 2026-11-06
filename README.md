@@ -51,11 +51,11 @@ Công cụ tự động hóa toàn trình đăng ký và cộng dồn gói **Goo
    - **Trên VPS / Server từ xa**: Mở `http://<IP-VPS>:8765` (hoặc dùng SSH Port Forwarding dưới máy cá nhân: `ssh -L 8765:127.0.0.1:8765 user@ip-vps` rồi truy cập `http://127.0.0.1:8765`).
 
 #### 🔧 Biến môi trường tùy chỉnh trên Linux (Không bắt buộc)
-- `PORT`: Đổi cổng chạy Web Server (mặc định: `8765`).
+- `APP_PORT`: Đổi cổng chạy Web Server (mặc định: `8765`).
 - `HOST`: Đổi địa chỉ lắng nghe (mặc định trên Linux: `0.0.0.0`, trên Windows: `127.0.0.1`).
 - `CHROME_BIN`: Chỉ định đường dẫn file thực thi trình duyệt Chrome/Chromium tùy chỉnh.
   ```bash
-  PORT=9000 CHROME_BIN=/usr/bin/google-chrome ./2_khoi_dong_linux.sh
+  APP_PORT=9000 CHROME_BIN=/usr/bin/google-chrome ./2_khoi_dong_linux.sh
   ```
 
 ---

@@ -535,5 +535,5 @@ async def open_browser_manual(req: AccountActionReq):
 if __name__ == "__main__":
     import uvicorn
     host = os.environ.get("HOST", "0.0.0.0" if os.name != "nt" else "127.0.0.1")
-    port = int(os.environ.get("PORT", "8765"))
+    port = int(os.environ.get("APP_PORT", "8765"))
     uvicorn.run(app, host=host, port=port, log_level="warning")
