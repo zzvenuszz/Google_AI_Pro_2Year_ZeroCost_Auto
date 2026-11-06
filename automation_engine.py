@@ -1050,7 +1050,9 @@ class GoogleUltraAutomator:
                                                     # tháng/năm tách biêt, select box, thứ tự trường không cố định)
                                                     field_info = await tf.evaluate("""() => {
                                                         const out = {};
-                                                        document.querySelectorAll('input:visible, select:visible').forEach((el, i) => {
+                                                        document.querySelectorAll('input, select').forEach((el, i) => {
+                                                            const style = getComputedStyle(el);
+                                                            if (style.display === 'none' || style.visibility === 'hidden' || el.type === 'hidden' || el.hasAttribute('hidden')) return;
                                                             const a = {};
                                                             for (const attr of ['placeholder','aria-label','name','id','autocomplete','type','inputmode']) {
                                                                 const v = el.getAttribute(attr);
