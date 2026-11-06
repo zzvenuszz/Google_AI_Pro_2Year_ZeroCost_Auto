@@ -8,22 +8,24 @@ echo "  Bảng Điều Khiển Tự Động Google AI Pro (5 TB) 2 Năm Miễn P
 echo "  Đang kiểm tra và cài đặt môi trường Python (.venv)..."
 echo "======================================================================"
 
+# Luôn dùng venv; không bao giờ fallback sang system pip (tránh lỗi PEP 668 externally-managed-environment)
 if [ ! -d ".venv" ]; then
     python3 -m venv .venv || {
-        echo "⚠️ Không tìm thấy python3-venv, đang thử cài đặt trực tiếp qua pip..."
+        echo "❌ Không thể tạo .venv. Hãy cài python3-venv rồi chạy lại."
+        exit 1
     }
 fi
 
-if [ -f ".venv/bin/python" ]; then
-    PY_BIN=".venv/bin/python"
-    PIP_BIN=".venv/bin/pip"
-else
-    PY_BIN="python3"
-    PIP_BIN="python3 -m pip"
+if [ ! -f ".venv/bin/python" ]; then
+    echo "❌ .venv bị hỏng (thiếu .venv/bin/python). Hãy xóa .venv và chạy lại script."
+    exit 1
 fi
 
-$PIP_BIN install --upgrade pip
-$PIP_BIN install -r requirements.txt
+PY_BIN=".venv/bin/python"
+PIP_BIN=".venv/bin/pip"
+
+"$PIP_BIN" install --upgrade pip
+"$PIP_BIN" install -r requirements.txt
 
 # Kiểm tra trình duyệt Chrome / Chromium trên Linux
 if ! command -v google-chrome >/dev/null 2>&1 && \
@@ -33,7 +35,7 @@ if ! command -v google-chrome >/dev/null 2>&1 && \
     echo "======================================================================"
     echo "  Không tìm thấy Chrome hệ thống, đang tải Chromium qua Playwright..."
     echo "======================================================================"
-    $PY_BIN -m playwright install chromium
+    "$PY_BIN" -m playwright install chromium
 fi
 
 echo ""
@@ -45,4 +47,4 @@ if [ -n "$DISPLAY" ] && command -v xdg-open >/dev/null 2>&1; then
     (sleep 1.5 && xdg-open "http://127.0.0.1:8765" >/dev/null 2>&1) &
 fi
 
-exec $PY_BIN app.py
+exec "$PY_BIN" app.py

@@ -1391,7 +1391,7 @@ class GoogleUltraAutomator:
             ordered_frames = [f for f in page.frames if f != page.main_frame] + [page.main_frame]
             for f2 in ordered_frames:
                 f2_url = f2.url or ""
-                if "eacquire" in f2_url:
+                if self._is_payment_frame(f2_url):
                     eacquire_present = True
                 try:
                     f2_txt = (await f2.inner_text("body", timeout=1500)).strip()
@@ -1401,7 +1401,7 @@ class GoogleUltraAutomator:
                 if "验证是您本人" in f2_txt or "验证您的身份" in f2_txt or "Verify it's you" in f2_txt:
                     reauth_spinning = True
 
-                if "eacquire" in f2_url or "instrument" in f2_url or "challenge" in f2_url or "accounts.google.com" in f2_url or "reauth" in f2_url:
+                if self._is_payment_frame(f2_url):
                     try:
                         # 1. Check if there is a password input
                         pwd_inp = f2.locator('input[type="password"], input[name="Passwd"]')
@@ -1521,6 +1521,7 @@ class GoogleUltraAutomator:
                             "付款遭拒",
                             "支付遭拒",
                             "由于资金不足",
+                            "不可订阅",
                             "[OR-",
                             "[OR_",
                             "OR_FGVEM",
