@@ -4,15 +4,30 @@
   "auto_cancel": true,
   "proxy_template": "",
   "card": {
-    "number": "",
-    "exp_month": "",
-    "exp_year": "",
-    "cvc": "",
-    "holder": "",
+    "number": "4848040238657864",
+    "exp_month": "12",
+    "exp_year": "27",
+    "cvc": "042",
+    "holder": "BUI HUY HOAN",
     "address_line1": "700 SW 5th Ave",
     "postal_code": "97201",
     "locality": "Portland",
     "province": "OR"
   },
-  "accounts": []
+  "accounts": [
+    {
+      "id": "Account_1",
+      "email": "noobsclan101@gmail.com",
+      "password": "HuyHoan76",
+      "recovery_email": "zzvenuszz@gmail.com",
+      "totp_secret": "",
+      "proxy": "",
+      "ip_info": "🇺🇸 3.228.31.30 (US·Ashburn)",
+      "status": "error",
+      "current_step": 2,
+      "step_message": "❌ Lỗi ở bước 2: Step 2 (Cộng dồn miễn phí 12 tháng tầng 1 US$0.00) chưa thành công: ",
+      "expiry_date": "-",
+      "last_screenshot": "Account_1_step2_layer1_12m_modal_1793954956.png"
+    }
+  ]
 }

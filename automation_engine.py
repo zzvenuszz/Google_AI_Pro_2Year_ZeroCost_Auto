@@ -11,6 +11,7 @@ import signal
 import socket
 import struct
 import subprocess
+import threading
 import urllib.parse
 import time
 from typing import Callable, Dict, Any, Optional
@@ -1826,7 +1827,9 @@ class GoogleUltraAutomator:
 
         chrome_args = [
             CHROME_PATH,
+            f"--remote-debugging-address=127.0.0.1",
             f"--remote-debugging-port={self.port}",
+            "--remote-allow-origins=*",
             f"--user-data-dir={user_data_dir}",
             "--no-first-run",
             "--no-default-browser-check",
@@ -1901,7 +1904,7 @@ class GoogleUltraAutomator:
         self.proc = subprocess.Popen(
             chrome_args,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
             start_new_session=(os.name != "nt"),
         )
         for _ in range(30):

@@ -565,10 +565,16 @@
     let selectedStartSteps = {};
     let copiedAccountMap = {};
     let openedBrowserMap = {};
+    // Cấu hình base URL của API backend. Để trống nếu truy cập trực tiếp 127.0.0.1:8765.
+    // Nếu dùng port forwarding/tunnel (ví dụ code-server), hãy set giá trị này,
+    // KHÔNG có dấu slash cuối, ví dụ:
+    //   let API_BASE_URL = 'http://127.0.0.1:8765';
+    //   let API_BASE_URL = 'https://zzvenuszz-cline.hf.space/proxy/8765';
+    let API_BASE_URL = 'https://zzvenuszz-cline.hf.space/proxy/8765';
 
     async function fetchState() {
       try {
-        const res = await fetch('/api/state');
+        const res = await fetch(API_BASE_URL + '/api/state');
         const data = await res.json();
 
         if (!configInitialized) {
@@ -744,7 +750,7 @@
       try {
         const region = document.getElementById('cfgTargetRegion').value;
         const tpl = document.getElementById('cfgProxyTemplate').value.trim();
-        const res = await fetch('/api/proxy/test', {
+        const res = await fetch(API_BASE_URL + '/api/proxy/test', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ target_region: region, proxy_template: tpl })
@@ -786,18 +792,42 @@
           province: document.getElementById('cfgProvince').value.trim() || 'OR'
         }
       };
-      await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      fetchState();
+      try {
+        const res = await fetch(API_BASE_URL + '/api/config', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        console.log('[SAVE CONFIG] status:', res.status, res.statusText);
+        const text = await res.text();
+        console.log('[SAVE CONFIG] body:', text);
+        if (!res.ok) {
+          let detail = 'Không xác định';
+          try {
+            const err = JSON.parse(text);
+            detail = err.detail || JSON.stringify(err);
+          } catch (_) {
+            detail = text || res.statusText;
+          }
+          alert('❌ Lưu cấu hình thất bại (HTTP ' + res.status + '): ' + detail);
+        } else {
+          alert('✅ Đã lưu cấu hình thẻ và cài đặt chung!');
+        }
+      } catch (e) {
+        console.error('Lưu cấu hình lỗi:', e);
+        alert('❌ Lỗi kết nối khi lưu cấu hình: ' + e.message);
+      } finally {
+        // Luôn reload trạng thái để terminal logs hiển thị dòng log mới nhất
+        fetchState();
+      }
     }
 
     async function importAccounts() {
       const raw = document.getElementById('importText').value.trim();
       if (!raw) return alert('Vui lòng dán danh sách tài khoản cần nhập vào ô văn bản trước!');
-      const res = await fetch('/api/accounts/import', {
+      const res = await fetch(API_BASE_URL + '/api/accounts/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ raw_text: raw })
@@ -827,7 +857,7 @@
       const startStep = selectedStartSteps[accountId] || 1;
       if (!validateCardBeforeRun(startStep)) return;
       await saveConfig();
-      const res = await fetch('/api/run/single', {
+      const res = await fetch(API_BASE_URL + '/api/run/single', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ account_id: accountId, start_step: startStep })
@@ -843,7 +873,7 @@
       const startStep = parseInt(document.getElementById('batchStartStep').value || '1');
       if (!validateCardBeforeRun(startStep)) return;
       await saveConfig();
-      const res = await fetch('/api/run/batch', {
+      const res = await fetch(API_BASE_URL + '/api/run/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ start_step: startStep })
@@ -856,7 +886,7 @@
     }
 
     async function stopSingle(accountId) {
-      await fetch('/api/stop', {
+      await fetch(API_BASE_URL + '/api/stop', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ account_id: accountId })
@@ -865,14 +895,14 @@
     }
 
     async function stopAll() {
-      await fetch('/api/stop', { method: 'POST' });
+      await fetch(API_BASE_URL + '/api/stop', { method: 'POST' });
       fetchState();
     }
 
     async function openBrowser(accountId) {
       openedBrowserMap[accountId] = true;
       fetchState();
-      await fetch('/api/open_browser', {
+      await fetch(API_BASE_URL + '/api/open_browser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ account_id: accountId })
@@ -884,7 +914,7 @@
     }
 
     async function resetAccount(accountId) {
-      await fetch('/api/accounts/reset', {
+      await fetch(API_BASE_URL + '/api/accounts/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ account_id: accountId })
@@ -894,7 +924,7 @@
 
     async function deleteAccount(accountId) {
       if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản ${accountId} khỏi danh sách không?`)) return;
-      await fetch('/api/accounts/delete', {
+      await fetch(API_BASE_URL + '/api/accounts/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ account_id: accountId })
@@ -904,7 +934,7 @@
 
     function showScreenshot(accId, filename) {
       document.getElementById('modalTitle').textContent = `${accId} - Ảnh chụp xác nhận mới nhất (${filename})`;
-      document.getElementById('modalImg').src = `/screenshots/${filename}?t=${Date.now()}`;
+      document.getElementById('modalImg').src = `${API_BASE_URL}/screenshots/${filename}?t=${Date.now()}`;
       document.getElementById('imgModal').style.display = 'flex';
     }
 
